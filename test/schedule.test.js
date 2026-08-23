@@ -99,6 +99,12 @@ test('UTC 與台北跨日時以台北日期為準', () => {
   assert.equal(getTargetSaturday(new Date('2026-10-16T17:00:00Z')), '2026-10-17')
 })
 
+test('UTC 週六傍晚但台北已是週日時，目標是下一個週六', () => {
+  // UTC 2026-10-17T17:00（週六）= 台北 2026-10-18T01:00（週日），目標應為 10/24。
+  // 忽略時區的實作會回傳 2026-10-17，差七天。
+  assert.equal(getTargetSaturday(new Date('2026-10-17T17:00:00Z')), '2026-10-24')
+})
+
 test('findEntry 命中時回傳該筆', () => {
   const entries = [game, bye]
   assert.equal(findEntry(entries, '2026-11-14'), bye)
