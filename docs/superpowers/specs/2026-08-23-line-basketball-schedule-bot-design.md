@@ -49,7 +49,7 @@ line-basketball-bot/
 ### 執行流程
 
 ```
-GitHub Actions 觸發(週二 10:00 UTC = 台北 18:00)
+GitHub Actions 觸發(週二 10:17 UTC = 台北 18:17)
   → 計算目標比賽日(台北時區當下起算最近的週六,當天是週六則為當天)
   → schedule.json 查表
       ├─ 查無此日期(賽季外 / 春節)     → 不發送,正常結束
@@ -127,7 +127,7 @@ GitHub Actions 觸發(週二 10:00 UTC = 台北 18:00)
 ```yaml
 on:
   schedule:
-    - cron: '0 10 * * 2'
+    - cron: '17 10 * * 2'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -135,7 +135,9 @@ on:
         default: true
 ```
 
-台灣無日光節約時間,固定 UTC+8,偏移量可寫死。GitHub Actions 的 cron 有排隊延遲,實際送達約落在 18:00–18:20,對此用途可接受。
+台灣無日光節約時間,固定 UTC+8,偏移量可寫死。GitHub Actions 的 cron 有排隊延遲,實際送達約落在 18:17–18:40,對此用途可接受。
+
+刻意排在 17 分而非整點:整點是 GitHub 排程最壅塞的時刻,而被丟棄的排程不會產生執行紀錄、不會失敗、也不會寄信 —— 這是本專案唯一完全沒有訊號的失效模式。
 
 `workflow_dispatch` 預設 `dry_run: true`,只印出訊息不實際發送,供手動測試。
 
@@ -190,7 +192,7 @@ on:
 
 ## 維運風險
 
-**GitHub Actions 60 天停用**:repo 連續 60 天無 commit,排程 workflow 會被自動停用且不發通知。賽季橫跨 5 個半月,必然觸發。以 `keepalive.yml` 每 3 週自動 commit 一個時間戳檔案因應;因內建 `GITHUB_TOKEN` 產生的 commit 不保證被計為活躍,此 workflow 需使用 Personal Access Token。
+**GitHub Actions 60 天停用**:repo 連續 60 天無 commit,排程 workflow 會被自動停用且不發通知。賽季橫跨 5 個半月,必然觸發。以 `keepalive.yml` 於每月 1 號與 15 號自動 commit 一個時間戳檔案因應(每月兩次,對 60 天門檻保留約 2.8 倍餘裕;GitHub 可能延遲或直接丟棄排程,單月一次連續丟兩次即會超過門檻);因內建 `GITHUB_TOKEN` 產生的 commit 不保證被計為活躍,此 workflow 需使用 Personal Access Token。
 
 **賽季結束**:2027/03/20 之後查表皆為未命中,腳本每週執行但不發送任何訊息,無害。不另做停用機制。
 
