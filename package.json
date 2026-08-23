@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "notify": "node src/notify.js",
     "dry-run": "DRY_RUN=true node src/notify.js"
   }

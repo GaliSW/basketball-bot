@@ -11,6 +11,7 @@
 ## Global Constraints
 
 - **零外部相依套件**。不得 `npm install` 任何東西,測試用 `node:test`,HTTP 用內建 `fetch`。
+- **測試指令一律是 `npm test`(即 `node --test`,不帶路徑參數)**。實測 Node v22.21.1 傳目錄參數(`node --test test/`)不會遞迴搜尋,而是把目錄當成單一測試檔並失敗。
 - **ESM**。`package.json` 設 `"type": "module"`,一律用 `import`/`export`。
 - **Node 22**。CI 用 `actions/setup-node@v4` 搭配 `node-version: '22'`。
 - **時區一律 Asia/Taipei**。GitHub Actions 執行環境是 UTC,任何「今天是幾號」的判斷都必須經過時區轉換。
@@ -66,7 +67,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test",
     "notify": "node src/notify.js",
     "dry-run": "DRY_RUN=true node src/notify.js"
   }
