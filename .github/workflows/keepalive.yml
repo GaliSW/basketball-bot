@@ -1,0 +1,27 @@
+name: keepalive
+
+# GitHub 會停用「repo 連續 60 天無 commit」的排程 workflow，且不發通知。
+# 賽季橫跨 5 個半月，必然觸發，故每月自動 commit 一次時間戳。
+# 需使用 PAT：內建 GITHUB_TOKEN 產生的 commit 不保證被計為 repo 活躍。
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.KEEPALIVE_TOKEN }}
+
+      - name: 更新時間戳並推送
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git config user.name "keepalive-bot"
+          git config user.email "keepalive@users.noreply.github.com"
+          git add .keepalive
+          git commit -m "chore: keepalive $(date -u +%Y-%m-%d)"
+          git push

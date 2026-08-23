@@ -1,0 +1,32 @@
+name: 賽程通知
+
+on:
+  schedule:
+    # UTC 週二 10:00 = 台北週二 18:00。台灣無日光節約時間，偏移固定。
+    - cron: '0 10 * * 2'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只印出訊息，不實際發送'
+        type: boolean
+        default: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 執行測試
+        run: npm test
+
+      - name: 發送通知
+        run: node src/notify.js
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
