@@ -133,3 +133,22 @@ test('12/26 輪休的下一場是 1/2', () => {
   assert.equal(next.date, '2027-01-02')
   assert.equal(next.opponent, '(A)Happy Brothers')
 })
+
+test('12/26 帶有指向 1/2 的 alsoPreview', () => {
+  const entries = loadSchedule(new URL('../schedule.json', import.meta.url))
+  assert.equal(findEntry(entries, '2026-12-26').alsoPreview, '2027-01-02')
+})
+
+test('1/2 標記 skipNotify，使 12 月維持 4 次發送', () => {
+  const entries = loadSchedule(new URL('../schedule.json', import.meta.url))
+  assert.equal(findEntry(entries, '2027-01-02').skipNotify, true)
+})
+
+test('每個 alsoPreview 都指向該筆之後的下一場比賽', () => {
+  const entries = loadSchedule(new URL('../schedule.json', import.meta.url))
+  const withPreview = entries.filter((e) => e.alsoPreview)
+  assert.ok(withPreview.length > 0)
+  for (const e of withPreview) {
+    assert.equal(findNextGame(entries, e.date).date, e.alsoPreview)
+  }
+})

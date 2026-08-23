@@ -47,6 +47,6 @@ try {
   await pushMessage({ token, groupId, text })
   console.log(`已發送 ${target} 的通知。`)
 } catch (err) {
-  console.error(err.message)
+  console.error(`LINE 推送失敗：${err.message}`)
   process.exit(1)
 }

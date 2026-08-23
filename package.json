@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test",
-    "notify": "node src/notify.js",
     "dry-run": "DRY_RUN=true node src/notify.js"
   }
 }

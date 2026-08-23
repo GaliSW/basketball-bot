@@ -57,6 +57,10 @@ GitHub 會把「連續 60 天沒有 commit」的 repo 的排程 workflow 自動�
 5. **Expiration** 設定到 2027 年 4 月之後(要涵蓋整個賽季)
 6. 產生後複製,這就是 `KEEPALIVE_TOKEN`
 
+PAT 過期時的實際現象:keepalive workflow 會開始失敗,而失敗會每月寄一封信給你。如果放著不管,notify workflow 大約會在最後一次成功 commit 的 60 天後被 GitHub 靜默停用(不再發任何通知,也不會再寄信)。
+
+GitHub 的「排程 workflow 60 天無 commit 即停用」規則官方文件僅明載於 public repository。keepalive 這個機制不管 repo 是 public 還是 private 都無害,但建議你確認一下這個 repo 目前是 public 還是 private,心裡有底。
+
 ## 7. 把三組 Secret 存進 GitHub
 
 到這個 repo 的 **Settings** → **Secrets and variables** → **Actions** → **New repository secret**,依序建立:
@@ -69,11 +73,36 @@ GitHub 會把「連續 60 天沒有 commit」的 repo 的排程 workflow 自動�
 
 ## 8. 測試
 
-1. repo 的 **Actions** 分頁 → 左側選 **賽程通知** → **Run workflow**
-2. **保持 `dry_run` 勾選**,按 **Run workflow**
-3. 執行完成後點進去看 log,確認訊息內容正確,而且**沒有真的發出去**
+在 2026/9/29 之前,排程與試跑都不會印出任何訊息,因為算出來的週六還不在賽季內 —— 你只會看到 `不在賽程表內,不發送。` 這一行,完全看不到訊息內容,token、groupId、mention-all 這條路徑也完全不會被執行到。所以光靠 `dry_run` 沒辦法驗證設定是否正確,需要另外用一個測試群組來驗證。
 
-確認無誤後,如果你想試一次真實發送,可以把 `dry_run` 取消勾選再跑一次。但請注意額度(見下)。
+1. 在 LINE 建立一個**只有你自己與這個 bot 的測試群組**(2 人),把 bot 加進去。這樣一次發送只消耗 2 則額度,不是 45 則。(設計文件本來就建議用測試群組來驗證。)
+2. 用下面的 curl 指令直接呼叫 LINE API,驗證 token、群組 ID、mention-all 三者都正常運作。**記得把 `你的_CHANNEL_ACCESS_TOKEN` 換成你自己的 token,`你的測試群組_GROUP_ID` 換成上面那個測試群組的 ID(不是正式球隊群組的 ID!)**:
+
+```bash
+curl -X POST https://api.line.me/v2/bot/message/push \
+  -H "Authorization: Bearer 你的_CHANNEL_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "你的測試群組_GROUP_ID",
+    "messages": [{
+      "type": "text",
+      "text": "@all\n✅ 測試訊息，設定成功。",
+      "mention": { "mentionees": [{ "index": 0, "length": 4, "type": "all" }] }
+    }]
+  }'
+```
+
+   成功的話會回傳 `{}` 與 HTTP 200,而且測試群組裡會出現這則訊息,標記到所有人。
+
+3. 驗證成功後,正式球隊群組(45 人)的 group ID 才是要存進 `LINE_GROUP_ID` Secret 的值。**千萬不要拿正式群組的 ID 去跑上面這個 curl**,一發就是 45 則。
+4. 到 repo 的 **Actions** 分頁 → 左側選 **賽程通知** → **Run workflow**,**保持 `dry_run` 勾選**,按 **Run workflow**。這一步是用來**確認 workflow 本身跑得起來**(能 checkout、跑測試、順利結束),而不是確認訊息內容正確 —— 訊息內容已經在上面用 curl 驗證過了。
+
+## 8a. 確認你真的收得到失敗通知信
+
+整個錯誤處理策略都建立在「GitHub 會寄信通知你」這個假設上,也是刻意不做重試(retry)機制的原因。但 GitHub 只會寄信給**最後一次修改 cron 排程的人**,而且要在通知設定裡開啟才會寄。
+
+1. 把這次的設定都推送上去之後,到 repo 確認你自己就是修改 `.github/workflows/notify.yml` 的最後一個 commit 作者。
+2. 到 [github.com/settings/notifications](https://github.com/settings/notifications) → **Actions** → 確認「Send notifications for failed workflows only」是開啟的。
 
 ## ⚠️ 訊息額度
 
@@ -82,6 +111,8 @@ LINE 群組推播是按「則數 × 群組人數」計費。群組 45 人,每發
 整季已規劃在額度內,唯一的例外是 2026 年 12 月有 5 個週二,已用 `schedule.json` 裡的 `alsoPreview` / `skipNotify` 兩個欄位處理掉(12/22 那則會順便預告 1/2 的比賽,12/29 就不發了)。
 
 **所以測試時請務必用 `dry_run`,不要對正式群組亂發。** 每一次誤發都吃掉 45 則。
+
+2026/10 到 2027/01 這四個月,每月都是剛好發送 4 次,用掉 180 則(200 則中的),不到半則的餘裕。這代表文件裡「發送失敗就手動重跑 workflow」這個復原方式,在這四個月**不能用**——手動重跑等於多發一次,會超過當月額度。如果這四個月裡有一次發送失敗,請改成手動在群組裡貼訊息,不要重跑 workflow。
 
 ## 賽程有異動怎麼辦
 

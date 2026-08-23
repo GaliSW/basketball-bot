@@ -66,9 +66,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=22" },
   "scripts": {
     "test": "node --test",
-    "notify": "node src/notify.js",
     "dry-run": "DRY_RUN=true node src/notify.js"
   }
 }
@@ -795,8 +795,9 @@ name: 賽程通知
 
 on:
   schedule:
-    # UTC 週二 10:00 = 台北週二 18:00。台灣無日光節約時間，偏移固定。
-    - cron: '0 10 * * 2'
+    # UTC 週二 10:17 = 台北週二 18:17。台灣無日光節約時間，偏移固定。
+    # 刻意避開整點：GitHub 排程在整點最壅塞，被丟棄的排程不會留下任何紀錄。
+    - cron: '17 10 * * 2'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -804,9 +805,15 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
 jobs:
   notify:
     runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -833,12 +840,12 @@ jobs:
 name: keepalive
 
 # GitHub 會停用「repo 連續 60 天無 commit」的排程 workflow，且不發通知。
-# 賽季橫跨 5 個半月，必然觸發，故每月自動 commit 一次時間戳。
+# 賽季橫跨 5 個半月，必然觸發，故每 3 週（每月 1 號與 15 號）自動 commit 一次時間戳。
 # 需使用 PAT：內建 GITHUB_TOKEN 產生的 commit 不保證被計為 repo 活躍。
 
 on:
   schedule:
-    - cron: '0 3 1 * *'
+    - cron: '0 3 1,15 * *'
   workflow_dispatch:
 
 jobs:
@@ -851,11 +858,12 @@ jobs:
 
       - name: 更新時間戳並推送
         run: |
-          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          STAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "$STAMP" > .keepalive
           git config user.name "keepalive-bot"
           git config user.email "keepalive@users.noreply.github.com"
           git add .keepalive
-          git commit -m "chore: keepalive $(date -u +%Y-%m-%d)"
+          git commit -m "chore: keepalive ${STAMP%%T*}"
           git push
 ```
 

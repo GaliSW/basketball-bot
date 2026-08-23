@@ -2,8 +2,9 @@ name: 賽程通知
 
 on:
   schedule:
-    # UTC 週二 10:00 = 台北週二 18:00。台灣無日光節約時間，偏移固定。
-    - cron: '0 10 * * 2'
+    # UTC 週二 10:17 = 台北週二 18:17。台灣無日光節約時間，偏移固定。
+    # 刻意避開整點：GitHub 排程在整點最壅塞，被丟棄的排程不會留下任何紀錄。
+    - cron: '17 10 * * 2'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -11,9 +12,15 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
 jobs:
   notify:
     runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
