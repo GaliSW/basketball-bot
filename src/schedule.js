@@ -43,3 +43,24 @@ export function validateSchedule(entries) {
 export function loadSchedule(path) {
   return validateSchedule(JSON.parse(readFileSync(path, 'utf8')))
 }
+
+export function getTargetSaturday(now) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+
+  const d = new Date(`${today}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + ((6 - d.getUTCDay() + 7) % 7))
+  return d.toISOString().slice(0, 10)
+}
+
+export function findEntry(entries, date) {
+  return entries.find((e) => e.date === date) ?? null
+}
+
+export function findNextGame(entries, afterDate) {
+  return entries.find((e) => e.date > afterDate && !e.bye) ?? null
+}

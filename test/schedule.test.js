@@ -1,6 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { validateSchedule, loadSchedule } from '../src/schedule.js'
+import {
+  validateSchedule,
+  loadSchedule,
+  getTargetSaturday,
+  findEntry,
+  findNextGame,
+} from '../src/schedule.js'
 
 const game = { date: '2026-10-03', time: '13:15', opponent: '月見山沙威瑪', vest: '淺' }
 const bye = { date: '2026-11-14', bye: true }
@@ -73,4 +79,51 @@ test('實際的 schedule.json 通過驗證,且為 24 筆、19 場比賽、5 次�
   assert.equal(entries.length, 24)
   assert.equal(entries.filter((e) => !e.bye).length, 19)
   assert.equal(entries.filter((e) => e.bye).length, 5)
+})
+
+test('週二執行時目標是 4 天後的週六', () => {
+  // 2026-10-13 是週二。台北 18:00 = UTC 10:00
+  assert.equal(getTargetSaturday(new Date('2026-10-13T10:00:00Z')), '2026-10-17')
+})
+
+test('週六當天執行時目標是當天', () => {
+  assert.equal(getTargetSaturday(new Date('2026-10-17T02:00:00Z')), '2026-10-17')
+})
+
+test('週日執行時目標是 6 天後的週六', () => {
+  assert.equal(getTargetSaturday(new Date('2026-10-18T02:00:00Z')), '2026-10-24')
+})
+
+test('UTC 與台北跨日時以台北日期為準', () => {
+  // UTC 2026-10-16T17:00 = 台北 2026-10-17T01:00(週六)，目標應為當天
+  assert.equal(getTargetSaturday(new Date('2026-10-16T17:00:00Z')), '2026-10-17')
+})
+
+test('findEntry 命中時回傳該筆', () => {
+  const entries = [game, bye]
+  assert.equal(findEntry(entries, '2026-11-14'), bye)
+})
+
+test('findEntry 未命中時回傳 null', () => {
+  assert.equal(findEntry([game], '2027-02-06'), null)
+})
+
+test('findNextGame 跳過輪休場次', () => {
+  const next = { date: '2026-11-21', time: '14:20', opponent: '山王', vest: '深' }
+  assert.equal(findNextGame([game, bye, next], '2026-11-14'), next)
+})
+
+test('findNextGame 不回傳當天自己', () => {
+  assert.equal(findNextGame([game], '2026-10-03'), null)
+})
+
+test('findNextGame 沒有下一場時回傳 null', () => {
+  assert.equal(findNextGame([game, bye], '2026-11-14'), null)
+})
+
+test('12/26 輪休的下一場是 1/2', () => {
+  const entries = loadSchedule(new URL('../schedule.json', import.meta.url))
+  const next = findNextGame(entries, '2026-12-26')
+  assert.equal(next.date, '2027-01-02')
+  assert.equal(next.opponent, '(A)Happy Brothers')
 })
