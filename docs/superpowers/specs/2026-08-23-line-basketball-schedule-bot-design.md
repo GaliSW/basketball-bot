@@ -42,13 +42,15 @@ line-basketball-bot/
 └── SETUP.md                      LINE 官方帳號一次性設定步驟
 ```
 
-模組邊界:`message.js` 只負責「賽程物件 → 字串」,不知道 LINE 存在;`line.js` 只負責「字串 → HTTP 請求」,不知道籃球存在。兩者都可獨立測試,`notify.js` 是唯一需要 I/O 的地方。
+模組邊界:`message.js` 只負責「賽程資料 → 字串」,不知道 LINE 存在;`line.js` 只負責「字串 → HTTP 請求」,不知道籃球存在。兩者都可獨立測試,`notify.js` 是唯一需要 I/O 的地方。
+
+`message.js` 的介面為 `buildMessage(entry, nextEntry)`,其中 `nextEntry` 是賽程表中下一筆有比賽的資料,無則傳 `null`(輪休訊息的「下一場」預告需要它,比賽訊息則忽略)。查詢下一場屬 `schedule.js` 的責任。
 
 ### 執行流程
 
 ```
 GitHub Actions 觸發(週二 10:00 UTC = 台北 18:00)
-  → 計算本週六日期(今天 + 4 天)
+  → 計算目標比賽日(台北時區當下起算最近的週六,當天是週六則為當天)
   → schedule.json 查表
       ├─ 查無此日期(賽季外 / 春節)     → 不發送,正常結束
       ├─ skipNotify: true              → 不發送,正常結束
@@ -87,7 +89,7 @@ GitHub Actions 觸發(週二 10:00 UTC = 台北 18:00)
 
 採純文字而非 Flex Message:LINE 推播通知列會完整顯示純文字內容,Flex Message 只顯示 altText。通知的目的是讓人不點開就知道資訊。
 
-訊息開頭 mention 全體成員,確保靜音群組的成員也會收到提醒。
+訊息開頭 mention 全體成員,確保靜音群組的成員也會收到提醒。技術上使用 Messaging API text message 的 `mention.mentionees` 搭配 `{ "type": "all" }`,並在 `text` 中對應位置放置 `@all` 佔位字串、以 `index`/`length` 指向它。此功能僅在群組與多人聊天室有效。
 
 **比賽週:**
 ```
@@ -171,8 +173,8 @@ on:
 
 使用 Node 內建 `node:test`,不引入測試框架。
 
-- `schedule.js`:日期計算(週二 → 本週六)、查表命中與未命中、`skipNotify` 略過、驗證器對各種壞資料的偵測
-- `message.js`:比賽訊息、輪休訊息、帶預告的輪休訊息、最後一場輪休時無下場可預告的情況
+- `schedule.js`:目標比賽日計算(週二 → 4 天後的週六;週六當天 → 當天;其他星期幾亦正確)、查表命中與未命中、查詢下一場比賽、`skipNotify` 略過、驗證器對各種壞資料的偵測
+- `message.js`:比賽訊息、輪休訊息、帶預告的輪休訊息、`nextEntry` 為 `null` 時省略「下一場」該行(現行賽程最後一筆是比賽,此情況不會發生,但賽程異動後可能出現)
 - `line.js`:以 mock 取代 fetch,驗證請求 body 結構與 mention 欄位;測試絕不真實發送
 
 ## 一次性設定(使用者手動)
