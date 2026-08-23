@@ -1,0 +1,11 @@
+{
+  "name": "line-basketball-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "notify": "node src/notify.js",
+    "dry-run": "DRY_RUN=true node src/notify.js"
+  }
+}
