@@ -280,6 +280,12 @@ test('UTC 與台北跨日時以台北日期為準', () => {
   assert.equal(getTargetSaturday(new Date('2026-10-16T17:00:00Z')), '2026-10-17')
 })
 
+test('UTC 週六傍晚但台北已是週日時，目標是下一個週六', () => {
+  // UTC 2026-10-17T17:00（週六）= 台北 2026-10-18T01:00（週日），目標應為 10/24。
+  // 忽略時區的實作會回傳 2026-10-17，差七天 —— 這是唯一能分辨兩者的案例。
+  assert.equal(getTargetSaturday(new Date('2026-10-17T17:00:00Z')), '2026-10-24')
+})
+
 test('findEntry 命中時回傳該筆', () => {
   const entries = [game, bye]
   assert.equal(findEntry(entries, '2026-11-14'), bye)
@@ -343,7 +349,7 @@ export function findNextGame(entries, afterDate) {
 - [ ] **Step 4: 執行測試,確認通過**
 
 Run: `cd /Users/apple/line-basketball-bot && npm test`
-Expected: PASS，24 個測試全綠
+Expected: PASS，25 個測試全綠
 
 - [ ] **Step 5: Commit**
 
@@ -506,7 +512,7 @@ export function buildMessage(entry, nextEntry) {
 - [ ] **Step 4: 執行測試,確認通過**
 
 Run: `cd /Users/apple/line-basketball-bot && npm test`
-Expected: PASS，31 個測試全綠
+Expected: PASS，32 個測試全綠
 
 - [ ] **Step 5: Commit**
 
@@ -638,7 +644,7 @@ export async function pushMessage({ token, groupId, text }, fetchImpl = fetch) {
 - [ ] **Step 4: 執行測試,確認通過**
 
 Run: `cd /Users/apple/line-basketball-bot && npm test`
-Expected: PASS，35 個測試全綠
+Expected: PASS，36 個測試全綠
 
 - [ ] **Step 5: Commit**
 
@@ -760,7 +766,7 @@ Expected: 依序印出三則訊息 —— 10/17 的比賽訊息(18:50 vs 洗澡�
 - [ ] **Step 4: 確認全部測試仍通過**
 
 Run: `cd /Users/apple/line-basketball-bot && npm test`
-Expected: PASS，35 個測試全綠
+Expected: PASS，36 個測試全綠
 
 - [ ] **Step 5: Commit**
 
@@ -1026,7 +1032,7 @@ npm run dry-run # 印出「本週」該發的訊息，不實際發送
 - [ ] **Step 3: 確認全部測試仍通過**
 
 Run: `cd /Users/apple/line-basketball-bot && npm test`
-Expected: PASS，35 個測試全綠
+Expected: PASS，36 個測試全綠
 
 - [ ] **Step 4: Commit**
 
