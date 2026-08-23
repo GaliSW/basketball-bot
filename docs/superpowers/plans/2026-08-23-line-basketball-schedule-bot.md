@@ -880,7 +880,7 @@ for f in ['.github/workflows/notify.yml', '.github/workflows/keepalive.yml']:
 Expected:
 ```
 .github/workflows/notify.yml -> ['True', 'jobs', 'name']
-.github/workflows/keepalive.yml -> ['True', 'jobs']
+.github/workflows/keepalive.yml -> ['True', 'jobs', 'name']
 ```
 
 `on` 被解析成 `True` 是 YAML 1.1 的已知行為(`on`/`off`/`yes`/`no` 會變成布林),GitHub Actions 自己的解析器不受影響,看到 `True` 是正常的。
