@@ -778,7 +778,7 @@ git commit -m "feat: 通知腳本進入點"
 
 **Interfaces:**
 - Consumes: `src/notify.js`(Task 5)、`npm test`(Task 1 定義的 script)
-- Produces: 無程式介面。需要的 GitHub Secrets:`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_GROUP_ID`、`KEEPALIVE_TOKEN`。
+- Produces: 無程式介面。需要的 GitHub Secrets:`LINE_CHANNEL_ACCESS_TOKEN`、`LINE_GROUP_ID`。keepalive 使用內建 `GITHUB_TOKEN`,不需 secret。
 
 - [ ] **Step 1: 建立 `.github/workflows/notify.yml`**
 
@@ -833,7 +833,8 @@ name: keepalive
 
 # GitHub 會停用「repo 連續 60 天無 commit」的排程 workflow，且不發通知。
 # 賽季橫跨 5 個半月，必然觸發，故每 3 週（每月 1 號與 15 號）自動 commit 一次時間戳。
-# 需使用 PAT：內建 GITHUB_TOKEN 產生的 commit 不保證被計為 repo 活躍。
+# 使用內建的 GITHUB_TOKEN：不必額外產生、不會過期。保活效果不保證，但 public repo
+# 在停用排程前會先寄信警告，屆時手動重新啟用即可。
 
 on:
   schedule:
@@ -845,8 +846,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.KEEPALIVE_TOKEN }}
 
       - name: 更新時間戳並推送
         run: |
@@ -958,18 +957,7 @@ git commit -m "ci: 每週二排程通知與 keepalive 工作流程"
 6. 複製 `groupId` 的值(以大寫 `C` 開頭),這就是 `LINE_GROUP_ID`
 7. **把 Use webhook 關掉**。之後都不需要 webhook 了。
 
-## 6. 產生 keepalive 用的 Personal Access Token
-
-GitHub 會把「連續 60 天沒有 commit」的 repo 的排程 workflow 自動停用,而且不會通知你。賽季有五個半月,一定會踩到,所以需要一個每月自動 commit 的 workflow,而它需要一組 PAT。
-
-1. 到 GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
-2. **Generate new token**
-3. **Repository access** 選 **Only select repositories**,勾選這個 repo
-4. **Repository permissions** → **Contents** 設為 **Read and write**
-5. **Expiration** 設定到 2027 年 4 月之後(要涵蓋整個賽季)
-6. 產生後複製,這就是 `KEEPALIVE_TOKEN`
-
-## 7. 把三組 Secret 存進 GitHub
+## 6. 把兩組 Secret 存進 GitHub
 
 到這個 repo 的 **Settings** → **Secrets and variables** → **Actions** → **New repository secret**,依序建立:
 
@@ -977,7 +965,6 @@ GitHub 會把「連續 60 天沒有 commit」的 repo 的排程 workflow 自動�
 |---|---|
 | `LINE_CHANNEL_ACCESS_TOKEN` | 步驟 2 拿到的 token |
 | `LINE_GROUP_ID` | 步驟 5 拿到的 groupId |
-| `KEEPALIVE_TOKEN` | 步驟 6 拿到的 PAT |
 
 ## 8. 測試
 
@@ -1051,7 +1038,6 @@ git commit -m "docs: 一次性設定步驟與專案說明"
 1. 在 GitHub 建立 repo 並推送
 2. 照 `SETUP.md` 走完 LINE Developers Console 的設定
 3. 取得 groupId 並存入 Secrets
-4. 產生 keepalive PAT 並存入 Secrets
 5. 用 `dry_run` 跑一次驗證
 
 第一次真實通知會在 **2026-09-29(週二)** 發出,內容是 10/03 的第一場比賽(13:15 vs 月見山沙威瑪,淺色背心)。
