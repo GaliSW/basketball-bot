@@ -46,32 +46,18 @@
 6. 複製 `groupId` 的值(以大寫 `C` 開頭),這就是 `LINE_GROUP_ID`
 7. **把 Use webhook 關掉**。之後都不需要 webhook 了。
 
-## 6. 產生 keepalive 用的 Personal Access Token
-
-GitHub 會把「連續 60 天沒有 commit」的 repo 的排程 workflow 自動停用,而且不會通知你。賽季有五個半月,一定會踩到,所以需要一個定期自動 commit 的 workflow(排在每月 1 號與 15 號,留出被 GitHub 丟棄排程的餘裕),而它需要一組 PAT。
-
-1. 到 GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
-2. **Generate new token**
-3. **Repository access** 選 **Only select repositories**,勾選這個 repo
-4. **Repository permissions** → **Contents** 設為 **Read and write**
-5. **Expiration** 設定到 2027 年 4 月之後(要涵蓋整個賽季)
-6. 產生後複製,這就是 `KEEPALIVE_TOKEN`
-
-PAT 過期時的實際現象:keepalive workflow 會開始失敗,而失敗會寄信給你。如果放著不管,notify workflow 大約會在最後一次成功 commit 的 60 天後被 GitHub 靜默停用(不再發任何通知,也不會再寄信)。
-
-GitHub 的「排程 workflow 60 天無 commit 即停用」規則官方文件僅明載於 public repository。keepalive 這個機制不管 repo 是 public 還是 private 都無害,但建議你確認一下這個 repo 目前是 public 還是 private,心裡有底。
-
-## 7. 把三組 Secret 存進 GitHub
+## 6. 把兩組 Secret 存進 GitHub
 
 到這個 repo 的 **Settings** → **Secrets and variables** → **Actions** → **New repository secret**,依序建立:
 
 | Name | Value |
 |---|---|
 | `LINE_CHANNEL_ACCESS_TOKEN` | 步驟 2 拿到的 token |
-| `LINE_GROUP_ID` | 步驟 5 拿到的 groupId |
-| `KEEPALIVE_TOKEN` | 步驟 6 拿到的 PAT |
+| `LINE_GROUP_ID` | 步驟 5 拿到的 groupId(正式球隊群組,不是測試群組) |
 
-## 8. 測試
+keepalive workflow 用 GitHub 內建的 token 推送,不需要你提供任何東西。
+
+## 7. 測試
 
 在 2026/9/29 之前,排程與試跑都不會印出任何訊息,因為算出來的週六還不在賽季內 —— 你只會看到 `不在賽程表內,不發送。` 這一行,完全看不到訊息內容,token、groupId 這條路徑也完全不會被執行到。所以光靠 `dry_run` 沒辦法驗證設定是否正確,需要另外用一個測試群組來驗證。
 
@@ -96,7 +82,7 @@ curl -X POST https://api.line.me/v2/bot/message/push \
 3. 驗證成功後,正式球隊群組(45 人)的 group ID 才是要存進 `LINE_GROUP_ID` Secret 的值。**千萬不要拿正式群組的 ID 去跑上面這個 curl**,一發就是 45 則。
 4. 到 repo 的 **Actions** 分頁 → 左側選 **賽程通知** → **Run workflow**,**保持 `dry_run` 勾選**,按 **Run workflow**。這一步是用來**確認 workflow 本身跑得起來**(能 checkout、跑測試、順利結束),而不是確認訊息內容正確 —— 訊息內容已經在上面用 curl 驗證過了。
 
-## 8b. 端到端實測(選用,會真的發訊息)
+## 7b. 端到端實測(選用,會真的發訊息)
 
 `dry_run` 只證明流程跑得起來,不證明 GitHub Secrets 裡的 token 和 group ID 是對的 —— 那條路要到第一次真實發送才會被走到。想提前驗證,用 `target_date` 指定一場比賽:
 
@@ -111,7 +97,7 @@ Actions → **賽程通知** → **Run workflow**:
 
 `target_date` 留空時完全不影響行為,排程執行永遠不會設它。
 
-## 9. 確認你真的收得到失敗通知信
+## 8. 確認你真的收得到失敗通知信
 
 整個錯誤處理策略都建立在「GitHub 會寄信通知你」這個假設上,也是刻意不做重試(retry)機制的原因。但 GitHub 只會寄信給**最後一次修改 cron 排程的人**,而且要在通知設定裡開啟才會寄。
 

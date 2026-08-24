@@ -3,7 +3,10 @@ name: keepalive
 # GitHub 會停用「repo 連續 60 天無 commit」的排程 workflow，且不發通知。
 # 賽季橫跨 5 個半月，必然觸發，故於每月 1 號與 15 號自動 commit 一次時間戳。
 # 每月兩次而非一次：GitHub 可能延遲或直接丟棄排程，連續丟兩次就會超過 60 天。
-# 需使用 PAT：內建 GITHUB_TOKEN 產生的 commit 不保證被計為 repo 活躍。
+#
+# 使用內建的 GITHUB_TOKEN 而非 PAT：不必額外產生、不必管權限範圍、不會過期。
+# 代價是內建 token 產生的 commit 不保證被 GitHub 計為 repo 活躍。若真的不算，
+# public repo 在停用排程前會先寄信警告，屆時到 Actions 頁點一下即可重新啟用。
 
 on:
   schedule:
@@ -13,17 +16,18 @@ on:
 jobs:
   keepalive:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.KEEPALIVE_TOKEN }}
 
       - name: 更新時間戳並推送
         run: |
           STAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           echo "$STAMP" > .keepalive
-          git config user.name "keepalive-bot"
-          git config user.email "keepalive@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .keepalive
           git commit -m "chore: keepalive ${STAMP%%T*}"
           git push

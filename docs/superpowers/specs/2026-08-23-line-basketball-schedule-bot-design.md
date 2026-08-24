@@ -193,7 +193,9 @@ on:
 
 ## 維運風險
 
-**GitHub Actions 60 天停用**:repo 連續 60 天無 commit,排程 workflow 會被自動停用且不發通知。賽季橫跨 5 個半月,必然觸發。以 `keepalive.yml` 於每月 1 號與 15 號自動 commit 一個時間戳檔案因應(每月兩次,對 60 天門檻保留約 2.8 倍餘裕;GitHub 可能延遲或直接丟棄排程,單月一次連續丟兩次即會超過門檻);因內建 `GITHUB_TOKEN` 產生的 commit 不保證被計為活躍,此 workflow 需使用 Personal Access Token。
+**GitHub Actions 60 天停用**:repo 連續 60 天無 commit,排程 workflow 會被自動停用且不發通知。賽季橫跨 5 個半月,必然觸發。以 `keepalive.yml` 於每月 1 號與 15 號自動 commit 一個時間戳檔案因應(每月兩次而非一次:GitHub 可能延遲或直接丟棄排程,連續丟兩次即超過門檻)。
+
+原設計要求使用 Personal Access Token,理由是內建 `GITHUB_TOKEN` 產生的 commit 不保證被計為活躍。2026-08-25 改為使用內建 token:PAT 實測推送失敗(exit 128),且它本身引入了設定負擔與賽季中過期的風險。改用內建 token 後不需任何 secret、不會過期;代價是保活效果不保證,但本 repo 為 public,GitHub 在停用排程前會先寄信警告,屆時手動重新啟用即可。
 
 **賽季結束**:2027/03/20 之後查表皆為未命中,腳本每週執行但不發送任何訊息,無害。不另做停用機制。
 
