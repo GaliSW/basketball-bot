@@ -1,0 +1,10 @@
+name: probe2
+on:
+  schedule:
+    - cron: '0 3 1,15 * *'
+  workflow_dispatch:
+jobs:
+  probe2:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
