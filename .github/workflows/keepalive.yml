@@ -1,7 +1,8 @@
 name: keepalive
 
 # GitHub 會停用「repo 連續 60 天無 commit」的排程 workflow，且不發通知。
-# 賽季橫跨 5 個半月，必然觸發，故每 3 週（每月 1 號與 15 號）自動 commit 一次時間戳。
+# 賽季橫跨 5 個半月，必然觸發，故於每月 1 號與 15 號自動 commit 一次時間戳。
+# 每月兩次而非一次：GitHub 可能延遲或直接丟棄排程，連續丟兩次就會超過 60 天。
 # 需使用 PAT：內建 GITHUB_TOKEN 產生的 commit 不保證被計為 repo 活躍。
 
 on:

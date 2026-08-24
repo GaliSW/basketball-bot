@@ -36,4 +36,7 @@ jobs:
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
+          # 排程觸發 → 'false'（真的發送）
+          # 手動觸發且勾選 dry_run → true（只印出，不發送）
+          # 手動觸發但取消勾選 → 'false'（明確選擇真的發送）
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
