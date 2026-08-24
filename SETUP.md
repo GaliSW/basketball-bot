@@ -97,6 +97,21 @@ curl -X POST https://api.line.me/v2/bot/message/push \
 3. 驗證成功後,正式球隊群組(45 人)的 group ID 才是要存進 `LINE_GROUP_ID` Secret 的值。**千萬不要拿正式群組的 ID 去跑上面這個 curl**,一發就是 45 則。
 4. 到 repo 的 **Actions** 分頁 → 左側選 **賽程通知** → **Run workflow**,**保持 `dry_run` 勾選**,按 **Run workflow**。這一步是用來**確認 workflow 本身跑得起來**(能 checkout、跑測試、順利結束),而不是確認訊息內容正確 —— 訊息內容已經在上面用 curl 驗證過了。
 
+## 8b. 端到端實測(選用,會真的發訊息)
+
+`dry_run` 只證明流程跑得起來,不證明 GitHub Secrets 裡的 token 和 group ID 是對的 —— 那條路要到第一次真實發送才會被走到。想提前驗證,用 `target_date` 指定一場比賽:
+
+Actions → **賽程通知** → **Run workflow**:
+
+- **取消** `dry_run` 勾選
+- `target_date` 填 `2026-10-03`(或任何賽程表裡的日期)
+
+這會用真實 secrets 把該場次的正式訊息發到 `LINE_GROUP_ID` 指定的群組。
+
+**成本:一次 45 則。** 挑八月或九月上旬做,那時排程還沒開始發,額度全新。10 月之後每月只剩不到半則餘裕,別在那時候測。
+
+`target_date` 留空時完全不影響行為,排程執行永遠不會設它。
+
 ## 9. 確認你真的收得到失敗通知信
 
 整個錯誤處理策略都建立在「GitHub 會寄信通知你」這個假設上,也是刻意不做重試(retry)機制的原因。但 GitHub 只會寄信給**最後一次修改 cron 排程的人**,而且要在通知設定裡開啟才會寄。

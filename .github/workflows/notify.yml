@@ -11,6 +11,10 @@ on:
         description: '只印出訊息，不實際發送'
         type: boolean
         default: true
+      target_date:
+        description: '測試用：指定比賽日 YYYY-MM-DD，留空則依今天推算'
+        type: string
+        default: ''
 
 concurrency:
   group: notify
@@ -40,3 +44,4 @@ jobs:
           # 手動觸發且勾選 dry_run → true（只印出，不發送）
           # 手動觸發但取消勾選 → 'false'（明確選擇真的發送）
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          TARGET_DATE: ${{ inputs.target_date }}

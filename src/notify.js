@@ -19,7 +19,9 @@ try {
   process.exit(1)
 }
 
-const target = getTargetSaturday(new Date())
+// TARGET_DATE 僅供測試：指定要通知哪一場，而非依今天推算。
+// 正式排程不會設定它，所以行為完全不變。
+const target = process.env.TARGET_DATE || getTargetSaturday(new Date())
 const entry = findEntry(entries, target)
 
 if (!entry) {
