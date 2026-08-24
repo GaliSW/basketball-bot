@@ -1,9 +1,0 @@
-name: probe5
-on:
-  schedule:
-    - cron: '0 0 * * *'
-jobs:
-  probe5:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo ok
