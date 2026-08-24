@@ -31,22 +31,23 @@ test('送出正確的 endpoint、標頭與 body', async () => {
   assert.equal(body.messages[0].type, 'text')
 })
 
-test('訊息本文前面加上 @all', async () => {
+test('訊息原樣送出，不加任何前綴', async () => {
   const fetchImpl = fakeFetch(ok)
   await pushMessage({ token: 'T', groupId: 'C', text: '測試訊息' }, fetchImpl)
 
   const body = JSON.parse(fetchImpl.calls[0].options.body)
-  assert.equal(body.messages[0].text, '@all\n測試訊息')
+  assert.equal(body.messages[0].text, '測試訊息')
 })
 
-test('mentionees 指向 @all 的位置', async () => {
+test('不帶 mention 欄位', async () => {
+  // LINE 的 mention 全體僅限已驗證／付費官方帳號，未驗證帳號送出後
+  // mentionees 會被忽略，@all 只會變成一串普通文字。
   const fetchImpl = fakeFetch(ok)
   await pushMessage({ token: 'T', groupId: 'C', text: '測試訊息' }, fetchImpl)
 
   const body = JSON.parse(fetchImpl.calls[0].options.body)
-  assert.deepEqual(body.messages[0].mention, {
-    mentionees: [{ index: 0, length: 4, type: 'all' }],
-  })
+  assert.equal(body.messages[0].mention, undefined)
+  assert.deepEqual(Object.keys(body.messages[0]).sort(), ['text', 'type'])
 })
 
 test('非 2xx 時拋出含狀態碼與回應內容的錯誤', async () => {

@@ -73,10 +73,10 @@ GitHub 的「排程 workflow 60 天無 commit 即停用」規則官方文件僅�
 
 ## 8. 測試
 
-在 2026/9/29 之前,排程與試跑都不會印出任何訊息,因為算出來的週六還不在賽季內 —— 你只會看到 `不在賽程表內,不發送。` 這一行,完全看不到訊息內容,token、groupId、mention-all 這條路徑也完全不會被執行到。所以光靠 `dry_run` 沒辦法驗證設定是否正確,需要另外用一個測試群組來驗證。
+在 2026/9/29 之前,排程與試跑都不會印出任何訊息,因為算出來的週六還不在賽季內 —— 你只會看到 `不在賽程表內,不發送。` 這一行,完全看不到訊息內容,token、groupId 這條路徑也完全不會被執行到。所以光靠 `dry_run` 沒辦法驗證設定是否正確,需要另外用一個測試群組來驗證。
 
 1. 在 LINE 建立一個**只有你自己與這個 bot 的測試群組**(2 人),把 bot 加進去。這樣一次發送只消耗 2 則額度,不是 45 則。(設計文件本來就建議用測試群組來驗證。)
-2. 用下面的 curl 指令直接呼叫 LINE API,驗證 token、群組 ID、mention-all 三者都正常運作。**記得把 `你的_CHANNEL_ACCESS_TOKEN` 換成你自己的 token,`你的測試群組_GROUP_ID` 換成上面那個測試群組的 ID(不是正式球隊群組的 ID!)**:
+2. 用下面的 curl 指令直接呼叫 LINE API,驗證 token 與群組 ID 是否正常運作。**記得把 `你的_CHANNEL_ACCESS_TOKEN` 換成你自己的 token,`你的測試群組_GROUP_ID` 換成上面那個測試群組的 ID(不是正式球隊群組的 ID!)**:
 
 ```bash
 curl -X POST https://api.line.me/v2/bot/message/push \
@@ -86,8 +86,7 @@ curl -X POST https://api.line.me/v2/bot/message/push \
     "to": "你的測試群組_GROUP_ID",
     "messages": [{
       "type": "text",
-      "text": "@all\n✅ 測試訊息，設定成功。",
-      "mention": { "mentionees": [{ "index": 0, "length": 4, "type": "all" }] }
+      "text": "✅ 測試訊息，設定成功。"
     }]
   }'
 ```

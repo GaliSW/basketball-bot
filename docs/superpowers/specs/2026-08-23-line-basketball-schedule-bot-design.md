@@ -11,7 +11,6 @@
 
 **做:**
 - 排程推播比賽通知與輪休通知
-- 訊息中 mention 全體群組成員
 - 輪休週附下一場比賽預告
 - 處理 LINE 免費方案每月 200 則的額度限制
 
@@ -89,7 +88,9 @@ GitHub Actions 觸發(週二 10:17 UTC = 台北 18:17)
 
 採純文字而非 Flex Message:LINE 推播通知列會完整顯示純文字內容,Flex Message 只顯示 altText。通知的目的是讓人不點開就知道資訊。
 
-訊息開頭 mention 全體成員,確保靜音群組的成員也會收到提醒。技術上使用 Messaging API text message 的 `mention.mentionees` 搭配 `{ "type": "all" }`,並在 `text` 中對應位置放置 `@all` 佔位字串、以 `index`/`length` 指向它。此功能僅在群組與多人聊天室有效。
+訊息以純文字原樣送出,不加任何前綴。
+
+**曾嘗試但已移除:mention 全體成員。** 原本用 `mention.mentionees` 搭配 `{ "type": "all" }` 讓靜音群組的成員也會跳提醒,但 2026-08-25 實測發現 LINE 對未驗證的官方帳號會忽略 `mentionees`,`@all` 只會變成一串普通文字。此功能需帳號通過驗證,故移除。
 
 **比賽週:**
 ```
@@ -177,7 +178,7 @@ on:
 
 - `schedule.js`:目標比賽日計算(週二 → 4 天後的週六;週六當天 → 當天;其他星期幾亦正確)、查表命中與未命中、查詢下一場比賽、`skipNotify` 略過、驗證器對各種壞資料的偵測
 - `message.js`:比賽訊息、輪休訊息、帶預告的輪休訊息、`nextEntry` 為 `null` 時省略「下一場」該行(現行賽程最後一筆是比賽,此情況不會發生,但賽程異動後可能出現)
-- `line.js`:以 mock 取代 fetch,驗證請求 body 結構與 mention 欄位;測試絕不真實發送
+- `line.js`:以 mock 取代 fetch,驗證請求 body 結構、訊息原樣送出且不帶 mention 欄位;測試絕不真實發送
 
 ## 一次性設定(使用者手動)
 

@@ -1,5 +1,4 @@
 const ENDPOINT = 'https://api.line.me/v2/bot/message/push'
-const MENTION = '@all'
 
 export async function pushMessage({ token, groupId, text }, fetchImpl = fetch) {
   const res = await fetchImpl(ENDPOINT, {
@@ -10,13 +9,7 @@ export async function pushMessage({ token, groupId, text }, fetchImpl = fetch) {
     },
     body: JSON.stringify({
       to: groupId,
-      messages: [
-        {
-          type: 'text',
-          text: `${MENTION}\n${text}`,
-          mention: { mentionees: [{ index: 0, length: MENTION.length, type: 'all' }] },
-        },
-      ],
+      messages: [{ type: 'text', text }],
     }),
   })
 

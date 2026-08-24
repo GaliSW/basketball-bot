@@ -370,7 +370,7 @@ git commit -m "feat: 目標比賽日計算與賽程查表"
 **Interfaces:**
 - Consumes: Task 2 的 `findNextGame` 回傳值(由 `notify.js` 傳入,本模組不自行查表)
 - Produces:
-  - `buildMessage(entry: object, nextEntry: object | null) => string` — 回傳不含 `@all` 的訊息本文。mention 由 `line.js` 負責。
+  - `buildMessage(entry: object, nextEntry: object | null) => string` — 回傳訊息本文。
 
 三種輸出形態:比賽週、輪休週、輪休週帶預告。判斷規則:
 
@@ -535,7 +535,7 @@ git commit -m "feat: 比賽與輪休訊息組裝"
 - Produces:
   - `pushMessage({ token, groupId, text }, fetchImpl = fetch) => Promise<void>` — 成功則 resolve,非 2xx 則 `throw new Error`。第二個參數是測試用的注入點,正式呼叫時省略。
 
-訊息本文前面會加上 `@all\n`,並在 `mention.mentionees` 放 `{ index: 0, length: 4, type: 'all' }` 以 mention 全體成員。此功能僅在群組與多人聊天室有效。
+訊息以純文字原樣送出。(初版曾加上 `@all` 與 `mention.mentionees`,但實測發現未驗證的 LINE 官方帳號會忽略它,已移除。)
 
 - [ ] **Step 1: 寫失敗的測試 `test/line.test.js`**
 
@@ -573,22 +573,21 @@ test('送出正確的 endpoint、標頭與 body', async () => {
   assert.equal(body.messages[0].type, 'text')
 })
 
-test('訊息本文前面加上 @all', async () => {
+test('訊息原樣送出，不加任何前綴', async () => {
   const fetchImpl = fakeFetch(ok)
   await pushMessage({ token: 'T', groupId: 'C', text: '測試訊息' }, fetchImpl)
 
   const body = JSON.parse(fetchImpl.calls[0].options.body)
-  assert.equal(body.messages[0].text, '@all\n測試訊息')
+  assert.equal(body.messages[0].text, '測試訊息')
 })
 
-test('mentionees 指向 @all 的位置', async () => {
+test('不帶 mention 欄位', async () => {
   const fetchImpl = fakeFetch(ok)
   await pushMessage({ token: 'T', groupId: 'C', text: '測試訊息' }, fetchImpl)
 
   const body = JSON.parse(fetchImpl.calls[0].options.body)
-  assert.deepEqual(body.messages[0].mention, {
-    mentionees: [{ index: 0, length: 4, type: 'all' }],
-  })
+  assert.equal(body.messages[0].mention, undefined)
+  assert.deepEqual(Object.keys(body.messages[0]).sort(), ['text', 'type'])
 })
 
 test('非 2xx 時拋出含狀態碼與回應內容的錯誤', async () => {
@@ -614,7 +613,6 @@ Expected: FAIL，錯誤為 `Cannot find module '../src/line.js'`
 
 ```js
 const ENDPOINT = 'https://api.line.me/v2/bot/message/push'
-const MENTION = '@all'
 
 export async function pushMessage({ token, groupId, text }, fetchImpl = fetch) {
   const res = await fetchImpl(ENDPOINT, {
@@ -625,13 +623,7 @@ export async function pushMessage({ token, groupId, text }, fetchImpl = fetch) {
     },
     body: JSON.stringify({
       to: groupId,
-      messages: [
-        {
-          type: 'text',
-          text: `${MENTION}\n${text}`,
-          mention: { mentionees: [{ index: 0, length: MENTION.length, type: 'all' }] },
-        },
-      ],
+      messages: [{ type: 'text', text }],
     }),
   })
 
